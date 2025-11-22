@@ -18,11 +18,14 @@ CORS(app, resources={
     }
 })
 
+
 # MongoDB Connection (Olivia)
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 client = MongoClient(MONGO_URI)
 db = client["review_feedback_db"]
 feedback_collection = db["feedbacks"]
+# Audit log collection
+audit_collection = db["audit_logs"]
 
 def error_response(message, code=400):
     return jsonify({"error": message}), code
@@ -75,7 +78,7 @@ def log_audit(audit_log):
     """
     Olivia: Replace print statement with actual audit logging mechanism if needed. 
     """
-    print(f"AUDIT_LOG_ENTRY: {json.dumps(audit_log)}")
+    audit_collection.insert_one(audit_log)
 
 #  Routes
 @app.route("/health")
@@ -148,15 +151,30 @@ def update_feedback_endpoint(feedbackId):
     if original_feedback.get("userId") != userId:
         return error_response("Unauthorized", 403)
 
-    # Audit log
-    print(f"AUDIT: Feedback {feedbackId} updated by user {userId}")
+    # Audit log with before/after states
+    audit_log = {
+        "auditId": str(uuid.uuid4()),
+        "feedbackId": feedbackId,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "userId": userId,
+        "action": "UPDATE",
+        "before": {
+            "rating": original_feedback.get("rating"),
+            "comment": original_feedback.get("comment")
+        },
+        "after": {
+            "rating": rating,
+            "comment": comment
+        }
+    }
+    log_audit(audit_log)
 
     update_feedback_entry(feedbackId, rating, comment, datetime.now(timezone.utc))
 
     return jsonify({
         "message": "Feedback updated",
         "feedbackId": feedbackId,
-        "changes": {"rating": rating, "comment": comment}
+        "changes": audit_log["after"]
     }), 200
 
 

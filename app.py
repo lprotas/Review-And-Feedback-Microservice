@@ -1,7 +1,8 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from pymongo import MongoClient
+from datetime import datetime, timezone
 import os
-import datetime
 import uuid
 import json 
 
@@ -17,9 +18,11 @@ CORS(app, resources={
     }
 })
 
-# Mock Database
-# Olivia: Replace MOCK_DB with a real database connection 
-MOCK_DB = {}
+# MongoDB Connection (Olivia)
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+client = MongoClient(MONGO_URI)
+db = client["review_feedback_db"]
+feedback_collection = db["feedbacks"]
 
 def error_response(message, code=400):
     return jsonify({"error": message}), code
@@ -29,7 +32,10 @@ def get_feedback(feedbackId):
     """
     Olivia: Replace MOCK_DB lookup with actual DB query. 
     """
-    return MOCK_DB.get(feedbackId)
+    feedback = feedback_collection.find_one({"feedbackId": feedbackId})
+    if feedback:
+        feedback.pop("_id", None)
+    return feedback
 
 
 def save_feedback(userId, entityId, rating, comment):
@@ -37,14 +43,15 @@ def save_feedback(userId, entityId, rating, comment):
     Olivia: Replace MOCK_DB insertion with actual DB insert logic. 
     """
     feedbackId = str(uuid.uuid4())
-    MOCK_DB[feedbackId] = {
+    feedback_doc = {
         "feedbackId": feedbackId,
         "userId": userId,
         "entityId": entityId,
         "rating": rating,
         "comment": comment,
-        "last_modified": datetime.datetime.utcnow().isoformat()
+        "last_modified": datetime.now(timezone.utc).isoformat()
     }
+    feedback_collection.insert_one(feedback_doc)
     return feedbackId
 
 
@@ -52,12 +59,16 @@ def update_feedback_entry(feedbackId, rating, comment, last_modified):
     """
     Olivia: Replace MOCK_DB update with actual DB UPDATE logic.
     """
-    if feedbackId in MOCK_DB:
-        MOCK_DB[feedbackId]["rating"] = rating
-        MOCK_DB[feedbackId]["comment"] = comment
-        MOCK_DB[feedbackId]["last_modified"] = last_modified.isoformat()
-        return True
-    return False
+    update_data = {
+        "rating": rating,
+        "comment": comment,
+        "last_modified": last_modified.isoformat()
+    }
+    result = feedback_collection.update_one(
+        {"feedbackId": feedbackId},
+        {"$set": update_data}
+    )
+    return result.modified_count > 0
 
 
 def log_audit(audit_log):
@@ -140,7 +151,7 @@ def update_feedback_endpoint(feedbackId):
     # Audit log
     print(f"AUDIT: Feedback {feedbackId} updated by user {userId}")
 
-    update_feedback_entry(feedbackId, rating, comment, datetime.datetime.utcnow())
+    update_feedback_entry(feedbackId, rating, comment, datetime.now(timezone.utc))
 
     return jsonify({
         "message": "Feedback updated",

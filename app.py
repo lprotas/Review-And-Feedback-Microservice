@@ -58,7 +58,7 @@ def get_feedback(feedbackId):
     feedback = feedback_collection.find_one({"feedbackId": feedbackId})
     if feedback:
         feedback.pop("_id", None)
-    # Olivia: Replace MOCK_DB lookup with actual DB query.
+    
     return feedback
 
 def save_feedback(userId, entityId, rating, comment):
@@ -72,7 +72,7 @@ def save_feedback(userId, entityId, rating, comment):
         "last_modified": datetime.now(timezone.utc).isoformat()
     }
     feedback_collection.insert_one(feedback_doc)
-    # Olivia: Replace MOCK_DB insertion with actual DB insert logic.
+    
     return feedbackId
 
 

@@ -192,14 +192,15 @@ PUT /feedback/{feedbackId}
 
 ## Project Structure
 ```
-Review-And-Feedback-Microservice/
-├── app.py                  # Main application file
-├── requirements.txt        # Python dependencies
-├── Dockerfile              # Docker configuration
-├── .env.example            # Environment variables template
-├── images/                 # Database diagrams and images
-│   └── database-schema.png
-└── README.md               # Project documentation
+├── Review-And-Feedback-Microservice/
+|   ├── app.py                  # Main application file
+|   ├── requirements.txt        # Python dependencies
+|   ├── Dockerfile              # Docker configuration
+|   ├── .env.example            # Environment variables template
+|   ├── images/                 # Database diagrams and images
+|   │   └── database-schema.png
+|   └── README.md               # Project documentation
+└── docker-compose.yml
 ```
 
 ## Development Status

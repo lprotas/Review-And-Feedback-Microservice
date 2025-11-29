@@ -224,5 +224,5 @@ def update_feedback_endpoint(feedbackId):
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "5005"))
+    port = int(os.getenv("PORT", "5051"))
     app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
